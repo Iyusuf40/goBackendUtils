@@ -82,7 +82,8 @@ func (db *FileDb) GetRecordsByField(field string, value any) ([]map[string]any, 
 	}
 
 	for _, record := range listOfRecordsOfSameType {
-		if record[field] == compValue {
+		if retrieved, _ :=
+			getValInNestedFieldOfMap(field, record); retrieved == compValue {
 			listOfMatchedRecords = append(listOfMatchedRecords, record)
 		}
 	}
@@ -100,11 +101,17 @@ func (db *FileDb) GetIdByFieldAndValue(field string, value any) string {
 				panic(`FileDb: GetRecordsByField: records found for is not of  
 					map[string]any type` + recordsName)
 			}
-			if concVal[field] == value {
+
+			valAtField, exists := getValInNestedFieldOfMap(field, concVal)
+
+			if !exists {
+				return ""
+			}
+			if valAtField == value {
 				return key
 			}
 
-			if floatRep, ok := concVal[field].(float64); ok {
+			if floatRep, ok := valAtField.(float64); ok {
 				valueFloat, _ := getFloat64Equivalent(value)
 				if floatRep == valueFloat {
 					return key
@@ -142,11 +149,10 @@ func (db *FileDb) Update(id string, data UpdateDesc) bool {
 		return false
 	}
 
-	obj := db.inMemoryStore[id]
+	obj := db.inMemoryStore[id].(map[string]any)
 
-	if concrete_obj, ok := obj.(map[string]any); ok {
-		concrete_obj[data.Field] = data.Value
-		db.inMemoryStore[id] = concrete_obj
+	if _, ok := getValInNestedFieldOfMap(data.Field, obj); ok {
+		setValInMapOrNestedMap(data.Field, data.Value, &obj)
 	} else {
 		panic("typeof inMemoryStore[id] is not map[string]any")
 	}
@@ -204,6 +210,37 @@ func getFloat64Equivalent(value any) (float64, bool) {
 	}
 
 	return 0, false
+}
+
+func getValInNestedFieldOfMap(field string, map_ map[string]any) (any, bool) {
+	fields := strings.Split(field, ".")
+	subMap := map_
+	i := 0
+	for i = 0; i < len(fields)-1; i++ {
+		subField := fields[i]
+		s, ok := subMap[subField].(map[string]any)
+		if !ok {
+			return nil, false
+		}
+		subMap = s
+	}
+	return subMap[fields[i]], true
+}
+
+func setValInMapOrNestedMap(field string, value any, map_ *map[string]any) bool {
+	fields := strings.Split(field, ".")
+	subMap := *map_
+	i := 0
+	for i = 0; i < len(fields)-1; i++ {
+		subField := fields[i]
+		s, ok := subMap[subField].(map[string]any)
+		if !ok {
+			return false
+		}
+		subMap = s
+	}
+	subMap[fields[i]] = value
+	return true
 }
 
 var FILE_DB_MAP = map[string]*FileDb{}

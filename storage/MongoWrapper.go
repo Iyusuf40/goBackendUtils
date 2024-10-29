@@ -111,7 +111,17 @@ func (db *MongoWrapper) getObjectAsMap(sliceRep []map[string]any) map[string]any
 		if key == "_id" {
 			key = "id"
 		}
-		objectAsMap[key] = val
+
+		if nestedData, ok := val.([]any); ok {
+			nestedMaps := []map[string]any{}
+			// cast all to map[string]any
+			for _, nested := range nestedData {
+				nestedMaps = append(nestedMaps, nested.(map[string]any))
+			}
+			objectAsMap[key] = db.getObjectAsMap(nestedMaps)
+		} else {
+			objectAsMap[key] = val
+		}
 	}
 	return objectAsMap
 }

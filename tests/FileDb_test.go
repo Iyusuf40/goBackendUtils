@@ -147,6 +147,32 @@ func TestGetRecordsByField(t *testing.T) {
 		t.Fatal("TestGetRecordsByField: length of records returned should be 0",
 			"got", len(records))
 	}
+
+	// ============================= test nested fields
+	type Nested struct {
+		A int
+		B struct {
+			BA int
+		}
+	}
+
+	nstd := Nested{
+		A: 1,
+		B: struct {
+			BA int
+		}{1},
+	}
+	DB.Save(nstd)
+	records, err = DB.GetRecordsByField("B.BA", 1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(records) != 1 {
+		t.Fatal("TestGetRecordsByField: length of records returned should be 1",
+			"got", len(records))
+	}
 }
 
 func TestGetIdByFieldAndField(t *testing.T) {
@@ -247,6 +273,41 @@ func TestUpdate(t *testing.T) {
 			"TestUpdate: failed to update Name field " +
 				"expected " + updated_name + " got " + saved_user.Name,
 		)
+	}
+
+	// ============================= test nested fields
+	type Nested struct {
+		A int
+		B struct {
+			BA int
+		}
+	}
+
+	nstd := Nested{
+		A: 1,
+		B: struct {
+			BA int
+		}{1},
+	}
+
+	id, _ = DB.Save(nstd)
+
+	updated_nested_field := 2
+
+	resp = DB.Update(id, storage.UpdateDesc{
+		Field: "B.BA",
+		Value: updated_nested_field})
+
+	if !resp {
+		t.Fatal("TestUpdate: failed to update")
+	}
+
+	obj, _ = DB.Get(id)
+
+	if obj.(map[string]any)["B"].(map[string]any)["BA"] != 2 {
+		t.Fatal(
+			"TestUpdate: failed to update nested field, expected",
+			2, "got", obj.(map[string]any)["B"].(map[string]any)["BA"])
 	}
 }
 

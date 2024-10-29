@@ -7,11 +7,15 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func ServeAPI() {
-	e := echo.New()
-	e.Use(middleware.Recover())
+var e = echo.New()
+var g = e.Group("/api")
 
-	g := e.Group("/api")
+func GetApiGroup() *echo.Group {
+	return g
+}
+
+func ServeAPI() {
+	e.Use(middleware.Recover())
 	g.POST("/users", user_controller.SaveUser)
 	g.GET("/users/:id", user_controller.GetUser)
 	g.PUT("/users/:id", user_controller.UpdateUser)

@@ -27,7 +27,6 @@ func TestSaveAndGetMWR(t *testing.T) {
 	user := User{"test user", 20}
 	if id, err := MONGO_WRAPPER.Save(user); err == nil {
 		var obj, err = MONGO_WRAPPER.Get(id)
-		fmt.Println(id, "<--------")
 		if obj == nil {
 			t.Fatal("TestGet: early fail:", err.Error())
 		}
@@ -108,6 +107,32 @@ func TestGetRecordsByFieldMWR(t *testing.T) {
 
 	if len(records) != 0 {
 		t.Fatal("TestGetRecordsByField: length of records returned should be 0",
+			"got", len(records))
+	}
+
+	// ============================= test nested fields
+	type Nested struct {
+		A int
+		B struct {
+			BA int
+		}
+	}
+
+	nstd := Nested{
+		A: 1,
+		B: struct {
+			BA int
+		}{1},
+	}
+	MONGO_WRAPPER.Save(nstd)
+	records, err = MONGO_WRAPPER.GetRecordsByField("B.BA", 1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(records) != 1 {
+		t.Fatal("TestGetRecordsByField: length of records returned should be 1",
 			"got", len(records))
 	}
 }
@@ -206,6 +231,41 @@ func TestUpdateMWR(t *testing.T) {
 			"TestUpdate: failed to update Name field " +
 				"expected " + updated_name + " got " + saved_user.Name,
 		)
+	}
+
+	// ============================= test nested fields
+	type Nested struct {
+		A int
+		B struct {
+			BA int
+		}
+	}
+
+	nstd := Nested{
+		A: 1,
+		B: struct {
+			BA int
+		}{1},
+	}
+
+	id, _ = MONGO_WRAPPER.Save(nstd)
+
+	updated_nested_field := 2
+
+	resp = MONGO_WRAPPER.Update(id, storage.UpdateDesc{
+		Field: "B.BA",
+		Value: updated_nested_field})
+
+	if !resp {
+		t.Fatal("TestUpdate: failed to update")
+	}
+
+	obj, _ = MONGO_WRAPPER.Get(id)
+
+	if obj.(map[string]any)["B"].(map[string]any)["BA"] != float64(2) {
+		t.Fatal(
+			"TestUpdate: failed to update nested field, expected",
+			2, "got", obj.(map[string]any)["B"].(map[string]any)["BA"])
 	}
 }
 
