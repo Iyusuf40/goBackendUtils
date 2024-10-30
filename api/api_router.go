@@ -10,6 +10,10 @@ import (
 var e = echo.New()
 var g = e.Group("/api")
 
+func GetApiEchoInstance() *echo.Echo {
+	return e
+}
+
 func GetApiGroup() *echo.Group {
 	return g
 }
@@ -17,7 +21,7 @@ func GetApiGroup() *echo.Group {
 func ServeAPI() {
 	e.Use(middleware.Recover())
 	if config.AllowAllOrigin {
-		e.Use(middleware.CORS())
+		g.Use(middleware.CORS())
 	}
 	g.POST("/users", user_controller.SaveUser)
 	g.GET("/users/:id", user_controller.GetUser)

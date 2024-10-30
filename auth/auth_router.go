@@ -10,14 +10,23 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+var e = echo.New()
+var g = e.Group("/auth")
+
+func GetAuthEchoInstance() *echo.Echo {
+	return e
+}
+
+func GetAuthGroup() *echo.Group {
+	return g
+}
+
 func ServeAUTH() {
-	e := echo.New()
 	e.Use(middleware.Recover())
 	if config.AllowAllOrigin {
-		e.Use(middleware.CORS())
+		g.Use(middleware.CORS())
 	}
 
-	g := e.Group("/auth")
 	g.POST("/login", Login)
 	g.GET("/logout", Logout)
 
