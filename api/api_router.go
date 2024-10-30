@@ -1,8 +1,6 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/Iyusuf40/goBackendUtils/api/controllers/user_controller"
 	"github.com/Iyusuf40/goBackendUtils/config"
 	"github.com/labstack/echo/v4"
@@ -18,11 +16,9 @@ func GetApiGroup() *echo.Group {
 
 func ServeAPI() {
 	e.Use(middleware.Recover())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete, http.MethodOptions},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	}))
+	if config.AllowAllOrigin {
+		e.Use(middleware.CORS())
+	}
 	g.POST("/users", user_controller.SaveUser)
 	g.GET("/users/:id", user_controller.GetUser)
 	g.PUT("/users/:id", user_controller.UpdateUser)

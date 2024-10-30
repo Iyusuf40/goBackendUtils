@@ -150,3 +150,5 @@ func SetPasswordResetMessage(message string) {
 func SetLinkSubstitute(linkSubstitute string) {
 	LinkSubstitute = linkSubstitute
 }
+
+var AllowAllOrigin = false
